@@ -18,9 +18,10 @@ export default function RegisterAndLoginForm() {
 
   return (
     <div className="bg-blue-50 h-screen flex items-center">
-      {/* Register Form */}
+      {/* Register/Login Form */}
       <form className="w-64 mx-auto mb-12" onSubmit={handleSubmit}>
         <input
+          name="username"
           value={username}
           onChange={(ev) => setUsername(ev.target.value)}
           type="text"
@@ -28,13 +29,17 @@ export default function RegisterAndLoginForm() {
           className="block w-full rounded-md p-2 mb-2 border"
         />
         <input
+          name="password"
           value={password}
           onChange={(ev) => setPassword(ev.target.value)}
           type="password"
           placeholder="password"
           className="block w-full rounded-md p-2 mb-2 border"
         />
-        <button className="bg-blue-500 text-white block w-full rounded-md p-2">
+        <button
+          name="authButton"
+          className="bg-blue-500 text-white block w-full rounded-md p-2"
+        >
           {isLoginOrRegister === "register" ? "Register" : "Login"}
         </button>
         <div className="text-center mt-2">
