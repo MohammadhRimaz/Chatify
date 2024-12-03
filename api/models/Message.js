@@ -5,7 +5,7 @@ const MessageSchema = new mongoose.Schema(
     sender: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     recipient: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     text: String,
-    file: String,
+    file: String, // Original file name
   },
   { timestamps: true }
 );

@@ -9,6 +9,8 @@ const bcrypt = require("bcryptjs");
 const cookieParser = require("cookie-parser");
 const ws = require("ws");
 const fs = require("fs");
+const multer = require("multer");
+const path = require("path");
 
 // Database Connection
 dotenv.config();
@@ -29,6 +31,8 @@ const jwtSecret = process.env.JWT_SECRET;
 
 // Hashing the password from Database
 const bcryptSalt = bcrypt.genSaltSync(10);
+
+const upload = multer({ dest: path.join(__dirname, "uploads") });
 
 const app = express();
 app.use("/uploads", express.static(__dirname + "/uploads"));
@@ -92,6 +96,38 @@ app.get("/profile", (req, res) => {
   }
 });
 
+// File Upload API
+app.post("/upload", upload.single("file"), async (req, res) => {
+  const userData = await getUserDataFromRequest(req);
+  const { recipient } = req.body;
+
+  if (!req.file) {
+    return res.status(400).json({ error: "File not provided" });
+  }
+
+  // Extract the file extension from the original file name
+  const ext = path.extname(req.file.originalname);
+  const filename = req.file.filename + ext;
+
+  // Rename the file with its correct extension
+  const tempPath = path.join(__dirname, "uploads", req.file.filename);
+  const finalPath = path.join(__dirname, "uploads", filename);
+  fs.rename(tempPath, finalPath, (err) => {
+    if (err) {
+      console.error("Error renaming file:", err);
+      return res.status(500).json({ error: "Error saving file" });
+    }
+  });
+
+  const message = await Message.create({
+    sender: userData.userId,
+    recipient,
+    text: req.body.text || "",
+    file: filename, // Save the uploaded file's name
+  });
+  res.json(message);
+});
+
 // Login Route
 app.post("/login", async (req, res) => {
   const { username, password } = req.body;
@@ -109,7 +145,11 @@ app.post("/login", async (req, res) => {
           });
         }
       );
+    } else {
+      res.status(401).json({ error: "Wrong credentials" });
     }
+  } else {
+    res.status(401).json({ error: "User not found" });
   }
 });
 
@@ -183,6 +223,11 @@ wss.on("connection", (connection, req) => {
     clearTimeout(connection.deathTimer);
   });
 
+  // user is removed from the online list when the connection is terminated
+  connection.on("close", () => {
+    notifyAboutOnlinePeople();
+  });
+
   // Read username and id from the cookie for this connection
   const cookies = req.headers.cookie;
   if (cookies) {
@@ -208,18 +253,14 @@ wss.on("connection", (connection, req) => {
     const { recipient, text, file } = messageData;
     let filename = null;
     if (file) {
+      console.log("size", file.data.length);
       const parts = file.name.split(".");
       const ext = parts[parts.length - 1];
       filename = Date.now() + "." + ext;
-      const path = __dirname + "/uploads/" + filename;
-      const bufferData = new Buffer.from(file.data.split(",")[1], "base64");
-      // Write file to the path
-      fs.writeFile(path, bufferData, (err) => {
-        if (err) {
-          console.error("Error saving file:", err);
-          return;
-        }
-        console.log("File saved:", path);
+      const filePath = path.join(__dirname + "uploads" + filename);
+      const bufferData = Buffer.from(file.data.split(",")[1], "base64");
+      fs.writeFile(filePath, bufferData, () => {
+        console.log("file saved:" + path);
       });
     }
     if (recipient && (text || file)) {
@@ -229,6 +270,7 @@ wss.on("connection", (connection, req) => {
         text,
         file: file ? filename : null,
       });
+      console.log("created message");
       [...wss.clients]
         .filter((c) => c.userId === recipient)
         .forEach((c) =>
@@ -242,9 +284,19 @@ wss.on("connection", (connection, req) => {
             })
           )
         );
+      // Optionally, send the message to the sender (to show in their own chat)
+      connection.send(
+        JSON.stringify({
+          text,
+          sender: connection.userId,
+          recipient,
+          file: file ? filename : null,
+          _id: messageDoc._id,
+        })
+      );
     }
   });
 
-  // Call OnlinePeople function
+  // notify everyone about online people (when someone connects)
   notifyAboutOnlinePeople();
 });
