@@ -36,14 +36,14 @@ cd chatify
 
 npm install
 
-- **Dependencies:**
-  "autoprefixer": "^10.4.20",
-  "axios": "^1.7.7",
-  "lodash": "^4.17.21",
-  "postcss": "^8.4.49",
-  "react": "^18.3.1",
-  "react-dom": "^18.3.1",
-  "tailwindcss": "^3.4.15"
+- **Dependencies:**  
+  "autoprefixer": "^10.4.20",  
+  "axios": "^1.7.7",  
+  "lodash": "^4.17.21",  
+  "postcss": "^8.4.49",  
+  "react": "^18.3.1",  
+  "react-dom": "^18.3.1",  
+  "tailwindcss": "^3.4.15"  
 
 ### 3. Configure MongoDB
 
@@ -51,5 +51,5 @@ npm install
 
 ### 4. Run the app
 
-client> npm run dev;
-api> nodemon index.js;
+client> npm run dev  
+api> nodemon index.js  
