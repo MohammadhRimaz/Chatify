@@ -99,7 +99,7 @@ app.get("/profile", (req, res) => {
 // File Upload API
 app.post("/upload", upload.single("file"), async (req, res) => {
   const userData = await getUserDataFromRequest(req);
-  const { recipient } = req.body;
+  const { recipient, text } = req.body;
 
   if (!req.file) {
     return res.status(400).json({ error: "File not provided" });
@@ -122,9 +122,26 @@ app.post("/upload", upload.single("file"), async (req, res) => {
   const message = await Message.create({
     sender: userData.userId,
     recipient,
-    text: req.body.text || "",
+    text: text || "",
     file: filename, // Save the uploaded file's name
   });
+
+  // Broadcast the file message to the recipient
+  [...wss.clients]
+    .filter((c) => c.userId === recipient && c.userId === userData.userId)
+    .forEach((c) => {
+      c.send(
+        JSON.stringify({
+          _id: message._id,
+          sender: userData.userId,
+          recipient,
+          text: message.text,
+          file: message.file,
+          createdAt: message.createdAt,
+        })
+      );
+    });
+
   res.json(message);
 });
 
@@ -138,9 +155,9 @@ app.post("/login", async (req, res) => {
       jwt.sign(
         { userId: foundUser._id, username },
         jwtSecret,
-        {},
+        { expiresIn: "1h" }, // Token expires in 1 hour
         (err, token) => {
-          res.cookie("token", token).json({
+          res.cookie("token", token, { sameSite: "none", secure: true }).json({
             id: foundUser._id,
           });
         }
@@ -155,7 +172,14 @@ app.post("/login", async (req, res) => {
 
 // Logout Route
 app.post("/logout", (req, res) => {
-  res.cookie("token", "").json("ok");
+  res
+    .cookie("token", "", {
+      sameSite: "none",
+      secure: true,
+      httpOnly: true, // Add for better security
+      expires: new Date(0), // Expire the cookie immediately
+    })
+    .json("ok");
 });
 
 // Registration Route
@@ -177,9 +201,12 @@ app.post("/register", async (req, res) => {
         if (err) {
           return res.status(500).json("Error Generating Token");
         }
-        res.cookie("token", token).status(201).json({
-          id: createdUser._id,
-        });
+        res
+          .cookie("token", token, { sameSite: "none", secure: true })
+          .status(201)
+          .json({
+            id: createdUser._id,
+          });
       }
     );
   } catch (err) {
@@ -195,15 +222,22 @@ const wss = new ws.WebSocketServer({ server });
 wss.on("connection", (connection, req) => {
   // Notify everyone about online people (when someone connects)
   function notifyAboutOnlinePeople() {
+    // [...wss.clients].forEach((client) => {
+    //   client.send(
+    //     JSON.stringify({
+    //       online: [...wss.clients].map((c) => ({
+    //         userId: c.userId,
+    //         username: c.username,
+    //       })),
+    //     })
+    //   );
+    // });
+    const onlineUsers = [...wss.clients]
+      .filter((client) => client.isAlive)
+      .map((client) => ({ userId: client.userId, username: client.username }));
+
     [...wss.clients].forEach((client) => {
-      client.send(
-        JSON.stringify({
-          online: [...wss.clients].map((c) => ({
-            userId: c.userId,
-            username: c.username,
-          })),
-        })
-      );
+      client.send(JSON.stringify({ online: onlineUsers }));
     });
   }
 
@@ -225,6 +259,8 @@ wss.on("connection", (connection, req) => {
 
   // user is removed from the online list when the connection is terminated
   connection.on("close", () => {
+    connection.isAlive = false;
+    clearInterval(connection.timer);
     notifyAboutOnlinePeople();
   });
 
@@ -270,9 +306,12 @@ wss.on("connection", (connection, req) => {
         text,
         file: file ? filename : null,
       });
-      console.log("created message");
+      // console.log("created message");
+      // Broadcast the message only to the recipient and sender
       [...wss.clients]
-        .filter((c) => c.userId === recipient)
+        .filter(
+          (c) => c.userId === recipient && c.userId === messageData.userId
+        )
         .forEach((c) =>
           c.send(
             JSON.stringify({

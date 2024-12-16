@@ -1,4 +1,5 @@
 export default function Avatar({ userId, username, online }) {
+  if (!username || !userId) return null; //Prevent rendering if data is missing
   const colors = [
     "bg-red-200",
     "bg-green-200",
@@ -13,7 +14,7 @@ export default function Avatar({ userId, username, online }) {
     "bg-lime-300",
   ];
 
-  const userIdBase10 = parseInt(userId, 20);
+  const userIdBase10 = parseInt(userId, 25);
   const colorIndex = userIdBase10 % colors.length;
   const color = colors[colorIndex];
 
@@ -28,11 +29,10 @@ export default function Avatar({ userId, username, online }) {
       </div>
 
       {/* Online Green symbol */}
-      {online && (
+      {online ? (
         <div className="absolute w-3 h-3 bottom-0 left-10 bg-green-500 rounded-full border border-white"></div>
-      )}
-      {/* Offline Green symbol */}
-      {!online && (
+      ) : (
+        // Offline Green symbol
         <div className="absolute w-3 h-3 bottom-0 left-10 bg-gray-400 rounded-full border border-white"></div>
       )}
     </div>

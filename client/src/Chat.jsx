@@ -64,6 +64,7 @@ export default function Chat() {
       setWs(null);
       setId(null);
       setUsername(null);
+      window.location.reload(); // Reload the page to reset state
     });
   }
 
