@@ -40,8 +40,8 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(
   cors({
-    credentials: true,
     origin: process.env.CLIENT_URL,
+    credentials: true,
   })
 );
 
@@ -215,23 +215,18 @@ app.post("/register", async (req, res) => {
   }
 });
 
-const server = app.listen(4000);
+// const server = app.listen(4000);
+
+const PORT = process.env.PORT || 4000;
+const server = app.listen(PORT, () =>
+  console.log(`Server is running on port ${PORT}`)
+);
 
 // Save Online users Data
 const wss = new ws.WebSocketServer({ server });
 wss.on("connection", (connection, req) => {
   // Notify everyone about online people (when someone connects)
   function notifyAboutOnlinePeople() {
-    // [...wss.clients].forEach((client) => {
-    //   client.send(
-    //     JSON.stringify({
-    //       online: [...wss.clients].map((c) => ({
-    //         userId: c.userId,
-    //         username: c.username,
-    //       })),
-    //     })
-    //   );
-    // });
     const onlineUsers = [...wss.clients]
       .filter((client) => client.isAlive)
       .map((client) => ({ userId: client.userId, username: client.username }));

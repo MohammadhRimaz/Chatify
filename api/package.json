@@ -1,4 +1,12 @@
 {
+  "name": "api",
+  "version": "1.0.0",
+  "description": "Backend for Chatify application",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
@@ -9,5 +17,11 @@
     "mongoose": "^8.8.2",
     "multer": "^1.4.5-lts.1",
     "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=14.0.0"
   }
 }
