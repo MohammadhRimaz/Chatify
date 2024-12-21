@@ -304,9 +304,7 @@ wss.on("connection", (connection, req) => {
       // console.log("created message");
       // Broadcast the message only to the recipient and sender
       [...wss.clients]
-        .filter(
-          (c) => c.userId === recipient || c.userId === messageData.userId
-        )
+        .filter((c) => c.userId === recipient)
         .forEach((c) =>
           c.send(
             JSON.stringify({
