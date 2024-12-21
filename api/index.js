@@ -128,7 +128,7 @@ app.post("/upload", upload.single("file"), async (req, res) => {
 
   // Broadcast the file message to the recipient
   [...wss.clients]
-    .filter((c) => c.userId === recipient || c.userId === userData.userId)
+    .filter((c) => c.userId === recipient && c.userId === userData.userId)
     .forEach((c) => {
       c.send(
         JSON.stringify({
