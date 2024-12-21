@@ -128,7 +128,7 @@ app.post("/upload", upload.single("file"), async (req, res) => {
 
   // Broadcast the file message to the recipient
   [...wss.clients]
-    .filter((c) => c.userId === recipient && c.userId === userData.userId)
+    .filter((c) => c.userId === recipient || c.userId === userData.userId)
     .forEach((c) => {
       c.send(
         JSON.stringify({
@@ -245,7 +245,7 @@ wss.on("connection", (connection, req) => {
       clearInterval(connection.timer);
       connection.terminate();
       notifyAboutOnlinePeople();
-    }, 1000);
+    }, 5 * 60 * 1000); // 5 minutes timeout
   }, 5000);
 
   connection.on("pong", () => {
@@ -305,7 +305,7 @@ wss.on("connection", (connection, req) => {
       // Broadcast the message only to the recipient and sender
       [...wss.clients]
         .filter(
-          (c) => c.userId === recipient && c.userId === messageData.userId
+          (c) => c.userId === recipient || c.userId === messageData.userId
         )
         .forEach((c) =>
           c.send(
