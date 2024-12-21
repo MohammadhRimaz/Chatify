@@ -22,7 +22,13 @@ export default function Chat() {
 
   // Function for Web Socket Connection
   function connectToWs() {
-    const ws = new WebSocket("ws://localhost:4000");
+    // Check if the app is running in production or development
+    const wsUrl =
+      window.location.hostname === "localhost"
+        ? "ws://localhost:4000" // Local development URL
+        : "wss://chatify-production-5a02.up.railway.app"; // Production URL
+
+    const ws = new WebSocket(wsUrl);
     setWs(ws);
     ws.addEventListener("message", handleMessage);
     //If the WebSocket connection is lost, the close event ensures that it reconnects automatically.
