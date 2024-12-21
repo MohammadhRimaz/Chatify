@@ -1,4 +1,9 @@
 {
+  "name": "chatify",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "npm run start --prefix api"
+  },
   "dependencies": {
     "cookie-parser": "^1.4.7"
   }
