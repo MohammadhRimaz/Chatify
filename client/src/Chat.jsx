@@ -4,6 +4,7 @@ import { UserContext } from "./UserContext";
 import { uniqBy } from "lodash";
 import axios from "axios";
 import Contact from "./Contact";
+import Back from "./Back";
 
 export default function Chat() {
   const [ws, setWs] = useState(null);
@@ -159,13 +160,21 @@ export default function Chat() {
   // Delete Duplicate Messages
   const messagesWithoutDupes = uniqBy(messages, "_id");
 
-  return (
-    <div className="flex h-screen">
-      {/* Contact Section */}
-      <div className="bg-white w-1/3 flex flex-col">
-        <div className="flex-grow">
-          <Logo />
+  // For mobile view, set a back button in the message section
+  const handleBackToContacts = () => {
+    setSelectedUserId(null);
+  };
 
+  return (
+    <div className="flex h-screen overflow-hidden">
+      {/* Contact Section */}
+      <div
+        className={`${
+          selectedUserId ? "hidden md:flex " : " w-full flex"
+        } bg-white flex-col md:w-1/3`}
+      >
+        <Logo />
+        <div className="flex-grow overflow-y-scroll">
           {/* Online People */}
           {Object.keys(onlinePeopleExlOurUser).map((userId) => (
             <Contact
@@ -225,11 +234,23 @@ export default function Chat() {
       </div>
 
       {/* Messages Section */}
-      <div className="flex flex-col bg-blue-100 w-2/3 p-2">
+      <div className="flex flex-col bg-blue-100 w-full md:w-2/3 p-2 overflow-hidden">
+        {/* Back Button for Mobile view */}
+        {!!selectedUserId && (
+          <div className="flex items-center gap-2 mb-2 md:hidden">
+            <button
+              onClick={handleBackToContacts}
+              className="flex items-center text-gray-500"
+            >
+              <Back />
+            </button>
+          </div>
+        )}
+
         {/* Messages Panel if no person selected */}
-        <div className="flex-grow">
+        <div className="flex-grow relative h-full overflow-hidden">
           {!selectedUserId && (
-            <div className="flex h-full items-center justify-center">
+            <div className="hidden md:flex h-full items-center justify-center">
               <div className="text-gray-400 text-lg">
                 Select a person to start a conversation
               </div>
@@ -291,7 +312,10 @@ export default function Chat() {
 
         {/* Write Messages only if a person selected */}
         {!!selectedUserId && (
-          <form className="flex gap-2" onSubmit={sendMessage}>
+          <form
+            className="flex gap-2 items-center w-full"
+            onSubmit={sendMessage}
+          >
             <input
               name="messageTypeField"
               type="text"
